@@ -97,7 +97,7 @@ export const QuestionInput = ({
       />
       <div className={styles.microphoneAndSendContainer}>
         {/* Microphone Icon */}
-        <div
+        {/* <div
           className={styles.questionInputMicrophone}
           onClick={isListening ? onStopClick : onMicrophoneClick}
           onKeyDown={(e) =>
@@ -124,7 +124,7 @@ export const QuestionInput = ({
               alt="Microphone"
             />
           )}
-        </div>
+        </div> */}
 
         {/* Send Button */}
         <div
