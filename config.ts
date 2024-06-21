@@ -1,5 +1,5 @@
 const config = {
-    backendUrl: "backsatish.azurewebsites.net",
-  };
-  
-  export default config;
+  backendUrl: "https://flask-testing123.azurewebsites.net",
+};
+
+export default config;

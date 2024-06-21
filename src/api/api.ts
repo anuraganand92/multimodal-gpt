@@ -1,8 +1,8 @@
 import { ConversationRequest } from "./models";
-
+import config from '../../config';
 
 export async function callConversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<Response> {
-    const response = await fetch("/api/conversation", {
+    const response = await fetch(`${config.backendUrl}/api/conversation`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
