@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create npm cache directory if not exists
+        run: mkdir -p /github/home/.npm
+
       - name: Fix npm cache permissions
         run: sudo chown -R $USER:$(id -gn $USER) /github/home/.npm
 
