@@ -1,61 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Stack, TextField } from "@fluentui/react";
 import { SendRegular } from "@fluentui/react-icons";
 import Send from "../../assets/Send.svg";
 import MicrophoneIcon from "../../assets/mic-outline.svg";
 import styles from "./QuestionInput.module.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
+
 interface Props {
-  onSend: (question: string) => void;
-  onMicrophoneClick: () => void;
-  onStopClick: () => void;
+  onSend: (question: string, documentContent?: string, documentName?: string) => void;
   disabled: boolean;
   placeholder?: string;
   clearOnSend?: boolean;
-  recognizedText: string;
-  isListening: boolean;
-  isRecognizing: boolean;
   setRecognizedText: (text: string) => void;
 }
 
 export const QuestionInput = ({
   onSend,
-  onMicrophoneClick,
-  onStopClick,
   disabled,
   placeholder,
   clearOnSend,
-  recognizedText,
-  isListening,
-  isRecognizing,
   setRecognizedText,
 }: Props) => {
   const [question, setQuestion] = useState<string>("");
-  const [liveRecognizedText, setLiveRecognizedText] = useState<string>("");
-  const [microphoneIconActive, setMicrophoneIconActive] =
-    useState<boolean>(false);
+  const [documentContent, setDocumentContent] = useState<string>("");
+  const [documentName, setDocumentName] = useState<string>("");
 
-  useEffect(() => {
-    if (isRecognizing) {
-      setLiveRecognizedText(recognizedText);
-      setMicrophoneIconActive(true); // Set microphone icon to active (blue)
-    } else {
-      setMicrophoneIconActive(false); // Set microphone icon to inactive
-    }
-  }, [recognizedText, isRecognizing]);
   const sendQuestion = () => {
-    if (disabled || (!question.trim() && !liveRecognizedText.trim())) {
+    if (disabled || (!question.trim() && !documentContent)) {
       return;
     }
 
-    const textToSend = question || liveRecognizedText;
-
-    onSend(textToSend);
+    onSend(question, documentContent, documentName);
 
     if (clearOnSend) {
       setQuestion("");
-      setLiveRecognizedText("");
+      setDocumentContent("");
+      setDocumentName("");
       setRecognizedText(""); // Clear recognizedText
     }
   };
@@ -72,10 +51,20 @@ export const QuestionInput = ({
     newValue?: string
   ) => {
     setQuestion(newValue || "");
-    setLiveRecognizedText(newValue || ""); // Update liveRecognizedText when edited
   };
 
-  const sendQuestionDisabled = disabled || !question.trim();
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setDocumentContent(content);
+        setDocumentName(file.name);
+      };
+      reader.readAsText(file);
+    }
+  };
 
   return (
     <Stack horizontal className={styles.questionInputContainer}>
@@ -86,7 +75,7 @@ export const QuestionInput = ({
         multiline
         resizable={false}
         borderless
-        value={question || liveRecognizedText}
+        value={question}
         onChange={(e, newValue) => {
           if (newValue !== undefined) {
             onQuestionChange(e, newValue);
@@ -95,36 +84,30 @@ export const QuestionInput = ({
         }}
         onKeyDown={onEnterPress}
       />
-      <div className={styles.microphoneAndSendContainer}>
-        {/* Microphone Icon */}
-        {/* <div
-          className={styles.questionInputMicrophone}
-          onClick={isListening ? onStopClick : onMicrophoneClick}
-          onKeyDown={(e) =>
-            e.key === "Enter" || e.key === " "
-              ? isListening
-                ? onStopClick()
-                : onMicrophoneClick()
-              : null
-          }
-          role="button"
-          tabIndex={0}
-          aria-label="Microphone button"
-        >
-          {microphoneIconActive ? (
-            <FontAwesomeIcon
-              icon={faMicrophone}
-              className={styles.microphoneIconActive}
-              style={{ color: "blue" }}
-            />
-          ) : (
+      {documentName && (
+        <div className={styles.uploadedFile}>
+          <span>{documentName}</span>
+        </div>
+      )}
+      <div className={styles.uploadAndSendContainer}>
+        {/* Document Upload Input */}
+        <div className={styles.questionInputMicrophone}>
+          <label htmlFor="file-upload">
             <img
               src={MicrophoneIcon}
               className={styles.microphoneIcon}
-              alt="Microphone"
+              alt="Upload"
             />
-          )}
-        </div> */}
+          </label>
+          <input
+            id="file-upload"
+            type="file"
+            onChange={handleFileUpload}
+            className={styles.uploadInput}
+            aria-label="Upload document button"
+            style={{ display: "none" }} // Hide the actual file input
+          />
+        </div>
 
         {/* Send Button */}
         <div
@@ -151,3 +134,5 @@ export const QuestionInput = ({
     </Stack>
   );
 };
+
+export default QuestionInput;

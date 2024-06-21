@@ -5,10 +5,6 @@ import {
   DismissRegular,
   SquareRegular,
 } from "@fluentui/react-icons";
-import {
-  SpeechRecognizer,
-  ResultReason,
-} from "microsoft-cognitiveservices-speech-sdk";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -16,7 +12,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import styles from "./Chat.module.css";
 import Logo from "../../assets/brand-logo.svg";
-import { multiLingualSpeechRecognizer } from "../../util/SpeechToText";
 
 import {
   ChatMessage,
@@ -50,12 +45,10 @@ const Chat = () => {
   const [answers, setAnswers] = useState<ChatMessage[]>([]);
   const abortFuncs = useRef([] as AbortController[]);
   const [conversationId, setConversationId] = useState<string>(uuidv4());
-  const [userMessage, setUserMessage] = useState("");
   const [recognizedText, setRecognizedText] = useState<string>("");
-  const [isRecognizing, setIsRecognizing] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const recognizerRef = useRef<SpeechRecognizer | null>(null);
-  const makeApiRequest = async (question: string) => {
+  const [userMessage, setUserMessage] = useState("");
+
+  const makeApiRequest = async (question: string, documentContent?: string, documentName?: string) => {
     lastQuestionRef.current = question;
 
     setIsLoading(true);
@@ -72,6 +65,13 @@ const Chat = () => {
       id: conversationId,
       messages: [...answers, userMessage],
     };
+
+    if (documentContent) {
+      request.messages.push({
+        role: "user",
+        content: `Uploaded document: ${documentName}\n\n${documentContent}`,
+      });
+    }
 
     let result = {} as ChatResponse;
     try {
@@ -129,53 +129,6 @@ const Chat = () => {
     }
 
     return abortController.abort();
-  };
-
-  const startSpeechRecognition = async () => {
-    if (!isRecognizing) {
-      setIsRecognizing(true);
-
-      recognizerRef.current = await multiLingualSpeechRecognizer(); // Store the recognizer in the ref
-      
-      recognizerRef.current.recognized = (s, e) => {
-        if (e.result.reason === ResultReason.RecognizedSpeech) {
-          const recognized = e.result.text;
-          setUserMessage(recognized);
-          setRecognizedText(recognized);
-        }
-      };
-
-      recognizerRef.current.startContinuousRecognitionAsync(() => {
-        setIsRecognizing(true);
-        setIsListening(true);
-      });
-    }
-  };
-
-  const stopSpeechRecognition = () => {
-    if (isRecognizing) {
-      // console.log("Stopping continuous recognition...");
-      if (recognizerRef.current) {
-        recognizerRef.current.stopContinuousRecognitionAsync(() => {
-          // console.log("Speech recognition stopped.");
-          recognizerRef.current?.close();
-        });
-      }
-      setIsRecognizing(false);
-      setRecognizedText("");
-      setIsListening(false);
-    }
-  };
-
-  const onMicrophoneClick = async () => {
-    if (!isRecognizing) {
-      // console.log("Starting speech recognition...");
-      await startSpeechRecognition();
-    } else {
-      // console.log("Stopping speech recognition...");
-      stopSpeechRecognition();
-      setRecognizedText(userMessage);
-    }
   };
 
   const clearChat = () => {
@@ -242,7 +195,17 @@ const Chat = () => {
                   {answer.role === "user" ? (
                     <div className={styles.chatMessageUser}>
                       <div className={styles.chatMessageUserMessage}>
-                        {answer.content}
+                        {answer.content.includes("Uploaded document:") ? (
+                          <>
+                            <div className={styles.uploadedFile}>
+                              <span>{answer.content.split("\n\n")[0].replace("Uploaded document: ", "")}</span>
+                              <span>Document</span>
+                            </div>
+                            <div>{answer.content.split("\n\n")[1]}</div>
+                          </>
+                        ) : (
+                          answer.content
+                        )}
                       </div>
                     </div>
                   ) : answer.role === "assistant" || answer.role === "error" ? (
@@ -288,11 +251,6 @@ const Chat = () => {
               <div ref={chatMessageStreamEnd} />
             </div>
           )}
-          <div>
-            {isRecognizing && !isListening && <p>Please wait...</p>}{" "}
-            {isListening && <p>Listening...</p>}{" "}
-          </div>
-
           <Stack horizontal className={styles.chatInput}>
             {isLoading && (
               <Stack
@@ -333,15 +291,10 @@ const Chat = () => {
               tabIndex={0}
             />
             <QuestionInput
-              clearOnSend
+              clearOnSend={true}
               placeholder="Type a new question..."
               disabled={isLoading}
-              onSend={(question) => makeApiRequest(question)}
-              recognizedText={recognizedText}
-              onMicrophoneClick={onMicrophoneClick}
-              onStopClick={stopSpeechRecognition}
-              isListening={isListening}
-              isRecognizing={isRecognizing}
+              onSend={(question, documentContent, documentName) => makeApiRequest(question, documentContent, documentName)}
               setRecognizedText={setRecognizedText}
             />
           </Stack>

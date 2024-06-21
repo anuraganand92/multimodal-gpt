@@ -302,3 +302,19 @@
             font-size: 12px;
         }
      }
+
+.uploadedFile {
+    display: flex;
+    align-items: center;
+    background: #eef6fe;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-family: "Segoe UI";
+    font-size: 14px;
+}
+
+.uploadedFile span {
+    margin-right: 10px;
+    color: #555;
+}
