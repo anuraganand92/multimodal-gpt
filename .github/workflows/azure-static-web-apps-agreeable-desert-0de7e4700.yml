@@ -26,10 +26,10 @@ jobs:
           node-version: '18'
 
       - name: Create npm cache directory if not exists
-        run: mkdir -p /github/home/.npm
+        run: mkdir -p /home/runner/.npm
 
       - name: Fix npm cache permissions
-        run: sudo chown -R $USER:$(id -gn $USER) /github/home/.npm
+        run: sudo chown -R $USER:$(id -gn $USER) /home/runner/.npm
 
       - name: Install Dependencies
         run: npm install
