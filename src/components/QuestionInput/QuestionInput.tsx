@@ -4,6 +4,7 @@ import { SendRegular } from "@fluentui/react-icons";
 import Send from "../../assets/Send.svg";
 import MicrophoneIcon from "../../assets/mic-outline.svg";
 import styles from "./QuestionInput.module.css";
+import { handleFileUpload } from "../../api";
 
 interface Props {
   onSend: (question: string, documentContent?: string, documentName?: string) => void;
@@ -25,6 +26,7 @@ export const QuestionInput = ({
   const [documentName, setDocumentName] = useState<string>("");
 
   const sendQuestion = () => {
+    console.log("Sending question:", question);
     if (disabled || (!question.trim() && !documentContent)) {
       return;
     }
@@ -53,22 +55,18 @@ export const QuestionInput = ({
     setQuestion(newValue || "");
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUploadChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setDocumentContent(content);
-        setDocumentName(file.name);
-      };
-      reader.readAsText(file);
+      console.log("Uploading file:", file);
+      await handleFileUpload(file);
+      setDocumentContent(file.name); // Just to trigger re-rendering, actual content will be in cookies
+      setDocumentName(file.name);
     }
   };
 
   return (
     <Stack horizontal className={styles.questionInputContainer}>
-      {/* Text Input Field */}
       <TextField
         className={styles.questionInputTextArea}
         placeholder={placeholder}
@@ -90,7 +88,6 @@ export const QuestionInput = ({
         </div>
       )}
       <div className={styles.uploadAndSendContainer}>
-        {/* Document Upload Input */}
         <div className={styles.questionInputMicrophone}>
           <label htmlFor="file-upload">
             <img
@@ -102,22 +99,19 @@ export const QuestionInput = ({
           <input
             id="file-upload"
             type="file"
-            onChange={handleFileUpload}
+            onChange={handleFileUploadChange}
             className={styles.uploadInput}
             aria-label="Upload document button"
             style={{ display: "none" }} // Hide the actual file input
           />
         </div>
 
-        {/* Send Button */}
         <div
           role="button"
           tabIndex={0}
           aria-label="Ask question button"
           onClick={sendQuestion}
-          onKeyDown={(e) =>
-            e.key === "Enter" || e.key === " " ? sendQuestion() : null
-          }
+          onKeyDown={(e) => e.key === "Enter" || e.key === " " ? sendQuestion() : null}
           className={styles.questionInputSendButtonContainer}
         >
           {disabled ? (

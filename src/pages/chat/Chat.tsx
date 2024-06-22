@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Stack } from "@fluentui/react";
 import { BroomRegular, DismissRegular, SquareRegular } from "@fluentui/react-icons";
 import { v4 as uuidv4 } from "uuid";
+import Cookies from "js-cookie";
 
 import styles from "./Chat.module.css";
 import Logo from "../../assets/brand-logo.svg";
@@ -52,12 +53,8 @@ const Chat = () => {
       messages: [...answers, userMessage],
     };
 
-    if (documentContent) {
-      request.messages.push({
-        role: "user",
-        content: `Uploaded document: ${documentName}\n\n${documentContent}`,
-      });
-    }
+    const userId = "some-user-id"; // Replace with actual user ID
+    const fileUrl = Cookies.get('uploadedFileUrl') || "";
 
     try {
       const result = await callConversationApi(request, abortController.signal);
