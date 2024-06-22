@@ -1,18 +1,21 @@
 import { ConversationRequest } from "./models";
 import config from '../../config';
 
-export async function callConversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<Response> {
-    const response = await fetch(`${config.backendUrl}`, {
-        method: "POST",
+export async function callConversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<any> {
+    const url = new URL(`${config.backendUrl}/ask`);
+    url.searchParams.append("query", options.messages[options.messages.length - 1].content); // Ensure the latest message content is used
+
+    const response = await fetch(url.toString(), {
+        method: "GET",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            messages: options.messages,
-            conversation_id: options.id
-        }),
         signal: abortSignal
     });
 
-    return response;
+    if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return response.json();
 }

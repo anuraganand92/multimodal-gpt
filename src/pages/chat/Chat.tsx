@@ -1,13 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Stack } from "@fluentui/react";
-import {
-  BroomRegular,
-  DismissRegular,
-  SquareRegular,
-} from "@fluentui/react-icons";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
+import { BroomRegular, DismissRegular, SquareRegular } from "@fluentui/react-icons";
 import { v4 as uuidv4 } from "uuid";
 
 import styles from "./Chat.module.css";
@@ -18,38 +11,31 @@ import {
   ConversationRequest,
   callConversationApi,
   Citation,
-  ToolMessageContent,
   ChatResponse,
+  ToolMessageContent,
 } from "../../api";
 import { Answer } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 const Chat = () => {
   const lastQuestionRef = useRef<string>("");
   const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showLoadingMessage, setShowLoadingMessage] = useState<boolean>(false);
-  const [activeCitation, setActiveCitation] =
-    useState<
-      [
-        content: string,
-        id: string,
-        title: string,
-        filepath: string,
-        url: string,
-        metadata: string
-      ]
-    >();
-  const [isCitationPanelOpen, setIsCitationPanelOpen] =
-    useState<boolean>(false);
+  const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
+  const [isCitationPanelOpen, setIsCitationPanelOpen] = useState<boolean>(false);
   const [answers, setAnswers] = useState<ChatMessage[]>([]);
-  const abortFuncs = useRef([] as AbortController[]);
+  const abortFuncs = useRef<AbortController[]>([]);
   const [conversationId, setConversationId] = useState<string>(uuidv4());
   const [recognizedText, setRecognizedText] = useState<string>("");
-  const [userMessage, setUserMessage] = useState("");
 
   const makeApiRequest = async (question: string, documentContent?: string, documentName?: string) => {
+    console.log("Sending question to API:", question); // Log the question
     lastQuestionRef.current = question;
+    setRecognizedText(""); // Clear recognizedText before setting new question
 
     setIsLoading(true);
     setShowLoadingMessage(true);
@@ -58,7 +44,7 @@ const Chat = () => {
 
     const userMessage: ChatMessage = {
       role: "user",
-      content: recognizedText || question,
+      content: question,
     };
 
     const request: ConversationRequest = {
@@ -73,67 +59,32 @@ const Chat = () => {
       });
     }
 
-    let result = {} as ChatResponse;
     try {
-      const response = await callConversationApi(
-        request,
-        abortController.signal
-      );
-      if (response?.body) {
-        const reader = response.body.getReader();
-        let runningText = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      const result = await callConversationApi(request, abortController.signal);
+      console.log("API call result:", result); // Log the result for debugging
 
-          var text = new TextDecoder("utf-8").decode(value);
-          const objects = text.split("\n");
-          objects.forEach((obj) => {
-            try {
-              runningText += obj;
-              result = JSON.parse(runningText);
-              setShowLoadingMessage(false);
-              if (result.error) {
-                setAnswers([
-                  ...answers,
-                  userMessage,
-                  { role: "error", content: result.error },
-                ]);
-              } else {
-                setAnswers([
-                  ...answers,
-                  userMessage,
-                  ...result.choices[0].messages,
-                ]);
-              }
-              runningText = "";
-            } catch { }
-          });
-        }
-        setAnswers([...answers, userMessage, ...result.choices[0].messages]);
+      setShowLoadingMessage(false);
+      if (result.error) {
+        setAnswers(prevAnswers => [...prevAnswers, userMessage, { role: "error", content: result.error }]);
+      } else {
+        setAnswers(prevAnswers => [...prevAnswers, userMessage, { role: "assistant", content: result.response }]);
       }
     } catch (e) {
       if (!abortController.signal.aborted) {
-        console.error(result);
-        alert(
-          "An error occurred. Please try again. If the problem persists, please contact the site administrator."
-        );
+        console.error("Error during API request:", e);
+        alert("An error occurred. Please try again. If the problem persists, please contact the site administrator.");
       }
-      setAnswers([...answers, userMessage]);
+      setAnswers(prevAnswers => [...prevAnswers, userMessage]);
     } finally {
       setIsLoading(false);
       setShowLoadingMessage(false);
-      abortFuncs.current = abortFuncs.current.filter(
-        (a) => a !== abortController
-      );
+      abortFuncs.current = abortFuncs.current.filter((a) => a !== abortController);
     }
-
-    return abortController.abort();
   };
 
   const clearChat = () => {
     lastQuestionRef.current = "";
-    setActiveCitation(undefined);
+    setActiveCitation(null);
     setAnswers([]);
     setConversationId(uuidv4());
   };
@@ -144,20 +95,10 @@ const Chat = () => {
     setIsLoading(false);
   };
 
-  useEffect(
-    () => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }),
-    [showLoadingMessage]
-  );
+  useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [showLoadingMessage, answers]);
 
   const onShowCitation = (citation: Citation) => {
-    setActiveCitation([
-      citation.content,
-      citation.id,
-      citation.title ?? "",
-      citation.filepath ?? "",
-      "",
-      "",
-    ]);
+    setActiveCitation(citation);
     setIsCitationPanelOpen(true);
   };
 
@@ -181,17 +122,11 @@ const Chat = () => {
             <Stack className={styles.chatEmptyState}>
               <img src={Logo} className={styles.chatIcon} aria-hidden="true" />
               <h1 className={styles.chatEmptyStateTitle}>Start chatting</h1>
-              {/* <h2 className={styles.chatEmptyStateSubtitle}>
-                This chatbot is configured to answer your questions
-              </h2> */}
             </Stack>
           ) : (
-            <div
-              className={styles.chatMessageStream}
-              style={{ marginBottom: isLoading ? "40px" : "0px" }}
-            >
+            <div className={styles.chatMessageStream} style={{ marginBottom: isLoading ? "40px" : "0px" }}>
               {answers.map((answer, index) => (
-                <>
+                <div key={index}>
                   {answer.role === "user" ? (
                     <div className={styles.chatMessageUser}>
                       <div className={styles.chatMessageUserMessage}>
@@ -212,29 +147,20 @@ const Chat = () => {
                     <div className={styles.chatMessageGpt}>
                       <Answer
                         answer={{
-                          answer:
-                            answer.role === "assistant"
-                              ? answer.content
-                              : "Sorry, an error occurred. Try refreshing the conversation or waiting a few minutes. If the issue persists, contact your system administrator. Error: " +
-                              answer.content,
-                          citations:
-                            answer.role === "assistant"
-                              ? parseCitationFromMessage(answers[index - 1])
-                              : [],
+                          answer: answer.role === "assistant" ? answer.content : "Sorry, an error occurred. Try refreshing the conversation or waiting a few minutes. If the issue persists, contact your system administrator. Error: " + answer.content,
+                          citations: answer.role === "assistant" ? parseCitationFromMessage(answers[index - 1]) : [],
                         }}
                         onCitationClicked={(c) => onShowCitation(c)}
                         index={index}
                       />
                     </div>
                   ) : null}
-                </>
+                </div>
               ))}
               {showLoadingMessage && (
-                <>
+                <div>
                   <div className={styles.chatMessageUser}>
-                    <div className={styles.chatMessageUserMessage}>
-                      {lastQuestionRef.current}
-                    </div>
+                    <div className={styles.chatMessageUserMessage}>{lastQuestionRef.current}</div>
                   </div>
                   <div className={styles.chatMessageGpt}>
                     <Answer
@@ -246,7 +172,7 @@ const Chat = () => {
                       index={0}
                     />
                   </div>
-                </>
+                </div>
               )}
               <div ref={chatMessageStreamEnd} />
             </div>
@@ -260,32 +186,20 @@ const Chat = () => {
                 aria-label="Stop generating"
                 tabIndex={0}
                 onClick={stopGenerating}
-                onKeyDown={(e) =>
-                  e.key === "Enter" || e.key === " " ? stopGenerating() : null
-                }
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " " ? stopGenerating() : null)}
               >
-                <SquareRegular
-                  className={styles.stopGeneratingIcon}
-                  aria-hidden="true"
-                />
-                <span className={styles.stopGeneratingText} aria-hidden="true">
-                  Stop generating
-                </span>
+                <SquareRegular className={styles.stopGeneratingIcon} aria-hidden="true" />
+                <span className={styles.stopGeneratingText} aria-hidden="true">Stop generating</span>
               </Stack>
             )}
             <BroomRegular
               className={`${styles.clearChatBroom} ${styles.mobileclearChatBroom}`}
               style={{
-                background:
-                  isLoading || answers.length === 0
-                    ? "#BDBDBD"
-                    : "radial-gradient(109.81% 107.82% at 100.1% 90.19%, #bd0f7d 33.63%, #c32d96 70.31%, #dd8db9 100%)",
+                background: isLoading || answers.length === 0 ? "#BDBDBD" : "radial-gradient(109.81% 107.82% at 100.1% 90.19%, #bd0f7d 33.63%, #c32d96 70.31%, #dd8db9 100%)",
                 cursor: isLoading || answers.length === 0 ? "" : "pointer",
               }}
               onClick={clearChat}
-              onKeyDown={(e) =>
-                e.key === "Enter" || e.key === " " ? clearChat() : null
-              }
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " " ? clearChat() : null)}
               aria-label="Clear session"
               role="button"
               tabIndex={0}
@@ -301,25 +215,12 @@ const Chat = () => {
         </div>
         {answers.length > 0 && isCitationPanelOpen && activeCitation && (
           <Stack.Item className={`${styles.citationPanel} ${styles.mobileStyles}`}>
-            <Stack
-              horizontal
-              className={styles.citationPanelHeaderContainer}
-              horizontalAlign="space-between"
-              verticalAlign="center"
-            >
+            <Stack horizontal className={styles.citationPanelHeaderContainer} horizontalAlign="space-between" verticalAlign="center">
               <span className={styles.citationPanelHeader}>Citations</span>
-              <DismissRegular
-                className={styles.citationPanelDismiss}
-                onClick={() => setIsCitationPanelOpen(false)}
-              />
+              <DismissRegular className={styles.citationPanelDismiss} onClick={() => setIsCitationPanelOpen(false)} />
             </Stack>
-            <h5 className={`${styles.citationPanelTitle} ${styles.mobileCitationPanelTitle}`}>{activeCitation[2]}</h5>
-            <ReactMarkdown
-              className={`${styles.citationPanelContent} ${styles.mobileCitationPanelContent}`}
-              children={activeCitation[0]}
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-            />
+            <h5 className={`${styles.citationPanelTitle} ${styles.mobileCitationPanelTitle}`}>{activeCitation.title}</h5>
+            <ReactMarkdown className={`${styles.citationPanelContent} ${styles.mobileCitationPanelContent}`} children={activeCitation.content} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} />
           </Stack.Item>
         )}
       </Stack>
