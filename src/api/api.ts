@@ -22,10 +22,9 @@ export async function callConversationApi(options: ConversationRequest, abortSig
     const userId = "some-user-id"; // Replace with actual user ID
     const fileUrl = Cookies.get('uploadedFileUrl') || "";
 
-    // Construct the query string for the GET request
     const queryString = new URLSearchParams({
         query: options.messages[options.messages.length - 1].content,
-        conversation_id: options.id,
+        conversation_id: options.id || '',  // Default to empty string if undefined
         user_id: userId,
         file_url: fileUrl
     }).toString();
