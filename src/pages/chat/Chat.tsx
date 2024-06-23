@@ -45,7 +45,7 @@ const Chat = () => {
 
     const userMessage: ChatMessage = {
       role: "user",
-      content: question,
+      content: documentContent ? `Uploaded document: ${documentName}\n\n${question}` : question,
     };
 
     const request: ConversationRequest = {
