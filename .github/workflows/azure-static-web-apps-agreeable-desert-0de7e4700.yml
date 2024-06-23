@@ -34,6 +34,13 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Set Environment Variables
+        run: |
+          echo "VITE_BACKEND_URL=${{ secrets.VITE_AZURE_BACKEND_URL }}" >> $GITHUB_ENV
+          echo "VITE_STORAGE_ACCOUNT_NAME=${{ secrets.VITE_AZURE_STORAGE_ACCOUNT_NAME }}" >> $GITHUB_ENV
+          echo "VITE_CONTAINER_NAME=${{ secrets.VITE_AZURE_CONTAINER_NAME }}" >> $GITHUB_ENV
+          echo "VITE_SAS_TOKEN=${{ secrets.VITE_AZURE_SAS_TOKEN }}" >> $GITHUB_ENV
+
       - name: Build
         run: npm run build
 
