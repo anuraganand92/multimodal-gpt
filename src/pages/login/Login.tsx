@@ -1,21 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useMsal } from "@azure/msal-react";
+import { InteractionType } from "@azure/msal-browser";
 import styles from './Login.module.css';
+import Logo from "../../assets/brand-logo.svg";
 
 const Login = () => {
+    const { instance } = useMsal();
+
+    useEffect(() => {
+        // Redirect to Entra ID login if user is not logged in
+        if (!instance.getAllAccounts().length) {
+            instance.loginRedirect();
+        }
+    }, [instance]);
+
+    const handleLogin = () => {
+        instance.loginRedirect();
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.formContainer}>
-                <h1 className={styles.title}>Login</h1>
+                <img src={Logo} className={styles.logo} alt="Hanashi AI Logo" />
+                <h1 className={styles.title}>Hanashi AI</h1>
                 <form className={styles.form}>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="email" className={styles.label}>Email</label>
-                        <input type="email" id="email" className={styles.input} required />
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="password" className={styles.label}>Password</label>
-                        <input type="password" id="password" className={styles.input} required />
-                    </div>
-                    <button type="submit" className={styles.button}>Login</button>
+                    <button className={styles.button} onClick={handleLogin} type="button">Login using your Microsoft Account</button>
                 </form>
             </div>
         </div>

@@ -12,6 +12,12 @@
     border-radius: 8px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
     width: 300px;
+    text-align: center; 
+}
+
+.logo {
+    height: 50px;
+    width: 50px;
 }
 
 .title {
@@ -27,26 +33,6 @@
     flex-direction: column;
 }
 
-.formGroup {
-    margin-bottom: 16px;
-}
-
-.label {
-    font-family: "Segoe UI";
-    font-size: 14px;
-    color: #616161;
-    margin-bottom: 8px;
-}
-
-.input {
-    font-family: "Segoe UI";
-    font-size: 14px;
-    padding: 8px;
-    border: 1px solid #d1d1d1;
-    border-radius: 4px;
-    width: 100%;
-}
-
 .button {
     padding: 12px;
     background: #bd0f83;
@@ -56,6 +42,7 @@
     font-family: "Segoe UI";
     font-weight: 600;
     cursor: pointer;
+    margin-top: 16px;
 }
 
 .button:hover {

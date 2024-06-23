@@ -2,6 +2,7 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import Cookies from "js-cookie";
 import { ConversationRequest } from "./models";
 import config from '../../config';
+import msalInstance from '../msalConfig';
 
 console.log("Initializing Blob Service Client with SAS token");
 
@@ -19,12 +20,13 @@ async function uploadFileToBlob(file: File): Promise<string> {
 
 export async function callConversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<any> {
     console.log("Calling conversation API with options:", options);
-    const userId = "some-user-id"; // Replace with actual user ID
+    const accounts = msalInstance.getAllAccounts();
+    const userId = accounts.length > 0 ? accounts[0].homeAccountId : "some-user-id";
     const fileUrl = Cookies.get('uploadedFileUrl') || "";
 
     const queryString = new URLSearchParams({
         query: options.messages[options.messages.length - 1].content,
-        conversation_id: options.id || '',  // Default to empty string if undefined
+        conversation_id: options.id || '', 
         user_id: userId,
         file_url: fileUrl
     }).toString();

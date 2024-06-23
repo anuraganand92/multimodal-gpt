@@ -1,14 +1,25 @@
 import { Outlet, Link } from "react-router-dom";
 import styles from "./Layout.module.css";
 import Logo from "../../assets/brand-logo.svg";
-import { CopyRegular, ShareRegular } from "@fluentui/react-icons";
 import { Dialog, Stack, TextField } from "@fluentui/react";
 import { useEffect, useState } from "react";
+import { useMsal } from "@azure/msal-react";
+import { CopyRegular } from "@fluentui/react-icons";
 
-const Layout = () => {
+const Layout = ({ user }: { user: any }) => {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isSharePanelOpen, setIsSharePanelOpen] = useState<boolean>(false);
     const [copyClicked, setCopyClicked] = useState<boolean>(false);
     const [copyText, setCopyText] = useState<string>("Copy URL");
+    const { instance } = useMsal();
+
+    const handleDropdownClick = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
+
+    const handleLogout = () => {
+        instance.logoutRedirect();
+    };
 
     const handleShareClick = () => {
         setIsSharePanelOpen(true);
@@ -35,7 +46,7 @@ const Layout = () => {
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
-                    <Stack horizontal verticalAlign="center">
+                    <Stack horizontal verticalAlign="center" className={styles.headerStack}>
                         <img
                             src={Logo}
                             className={styles.headerIcon}
@@ -43,12 +54,17 @@ const Layout = () => {
                         />
                         <Link to="/" className={styles.headerTitleContainer}>
                             <h3 className={styles.headerTitle}>Hanashi AI</h3>
-                        </Link>
-                        <div className={styles.shareButtonContainer} role="button" tabIndex={0} aria-label="Share" onClick={handleShareClick} onKeyDown={e => e.key === "Enter" || e.key === " " ? handleShareClick() : null}>
-                            <ShareRegular className={styles.shareButton} />
-                            <span className={styles.shareButtonText}>Share</span>
-                        </div>
+                        </Link>  
                     </Stack>
+                    <div className={styles.userContainer} onClick={handleDropdownClick} tabIndex={0} role="button" aria-label="User menu">
+                            <span className={styles.userName}>{user?.name}</span>
+                            {isDropdownOpen && (
+                                <div className={styles.dropdown}>
+                                    <button className={styles.dropdownItem} onClick={handleShareClick}>Share</button>
+                                    <button className={styles.dropdownItem} onClick={handleLogout}>Sign Out</button>
+                                </div>
+                            )}
+                    </div>
                 </div>
             </header>
             <Outlet />
@@ -56,7 +72,6 @@ const Layout = () => {
                 onDismiss={handleSharePanelDismiss}
                 hidden={!isSharePanelOpen}
                 styles={{
-                    
                     main: [{
                         selectors: {
                           ['@media (min-width: 480px)']: {
