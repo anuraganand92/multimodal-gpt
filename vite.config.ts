@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import history from 'connect-history-api-fallback';
-import dotenv from 'dotenv';
 
-dotenv.config();
+const backendUrl = process.env.VITE_AZURE_BACKEND_URL;
+const storageAccountName = process.env.VITE_AZURE_STORAGE_ACCOUNT_NAME;
+const containerName = process.env.VITE_AZURE_CONTAINER_NAME;
+const sasToken = process.env.VITE_AZURE_SAS_TOKEN;
+
+if (!backendUrl || !storageAccountName || !containerName || !sasToken) {
+  throw new Error("Missing required environment variables");
+}
 
 export default defineConfig({
   plugins: [
@@ -28,7 +34,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: (import.meta as any).env.VITE_AZURE_BACKEND_URL,
+        target: backendUrl,
         changeOrigin: true,
         secure: false,
       },
