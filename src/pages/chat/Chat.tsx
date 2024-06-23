@@ -131,7 +131,6 @@ const Chat = () => {
                           <>
                             <div className={styles.uploadedFile}>
                               <span>{answer.content.split("\n\n")[0].replace("Uploaded document: ", "")}</span>
-                              <span>Document</span>
                             </div>
                             <div>{answer.content.split("\n\n")[1]}</div>
                           </>
