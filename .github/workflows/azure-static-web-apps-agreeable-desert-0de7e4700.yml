@@ -42,6 +42,11 @@ jobs:
           echo "VITE_AZURE_SAS_TOKEN=${{ secrets.VITE_AZURE_SAS_TOKEN }}" >> $GITHUB_ENV
 
       - name: Build
+        env:
+          VITE_AZURE_BACKEND_URL: ${{ secrets.VITE_AZURE_BACKEND_URL }}
+          VITE_AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.VITE_AZURE_STORAGE_ACCOUNT_NAME }}
+          VITE_AZURE_CONTAINER_NAME: ${{ secrets.VITE_AZURE_CONTAINER_NAME }}
+          VITE_AZURE_SAS_TOKEN: ${{ secrets.VITE_AZURE_SAS_TOKEN }}
         run: npm run build
 
       - name: List output directory
