@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import history from 'connect-history-api-fallback';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export default defineConfig({
   plugins: [
@@ -25,7 +28,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://flask-testing123.azurewebsites.net',
+        target: (import.meta as any).env.VITE_AZURE_BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },

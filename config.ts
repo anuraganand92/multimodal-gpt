@@ -1,8 +1,8 @@
 const config = {
-  backendUrl: 'https://flask-testing123.azurewebsites.net',
-  storageAccountName: 'AZURE_STORAGE_ACCOUNT_NAME',
-  containerName: 'AZURE_CONTAINER_NAME',
-  sasToken: 'AZURE_STORAGE_SAS_TOKEN'
+  backendUrl: import.meta.env.VITE_AZURE_BACKEND_URL,
+  storageAccountName: import.meta.env.VITE_AZURE_STORAGE_ACCOUNT_NAME,
+  containerName: import.meta.env.VITE_AZURE_CONTAINER_NAME,
+  sasToken: import.meta.env.VITE_AZURE_SAS_TOKEN,
 };
 
 export default config;

@@ -21,6 +21,7 @@
         "@mantine/core": "^7.10.2",
         "@mantine/form": "^7.10.2",
         "@mantine/hooks": "^7.10.2",
+        "dotenv": "^16.4.5",
         "js-cookie": "^3.0.5",
         "lodash": "^4.17.21",
         "lodash-es": "^4.17.21",
