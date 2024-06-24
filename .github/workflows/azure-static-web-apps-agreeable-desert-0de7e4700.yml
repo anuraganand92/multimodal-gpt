@@ -40,6 +40,8 @@ jobs:
           echo "VITE_AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.VITE_AZURE_STORAGE_ACCOUNT_NAME }}" >> $GITHUB_ENV
           echo "VITE_AZURE_CONTAINER_NAME=${{ secrets.VITE_AZURE_CONTAINER_NAME }}" >> $GITHUB_ENV
           echo "VITE_AZURE_SAS_TOKEN=${{ secrets.VITE_AZURE_SAS_TOKEN }}" >> $GITHUB_ENV
+          echo "VITE_ENTRA_ID_CLIENT_ID=${{ secrets.VITE_ENTRA_ID_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "VITE_ENTRA_ID_TENANT_ID=${{ secrets.VITE_ENTRA_ID_TENANT_ID }}" >> $GITHUB_ENV
 
       - name: Build
         env:
@@ -47,6 +49,8 @@ jobs:
           VITE_AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.VITE_AZURE_STORAGE_ACCOUNT_NAME }}
           VITE_AZURE_CONTAINER_NAME: ${{ secrets.VITE_AZURE_CONTAINER_NAME }}
           VITE_AZURE_SAS_TOKEN: ${{ secrets.VITE_AZURE_SAS_TOKEN }}
+          VITE_ENTRA_ID_CLIENT_ID: ${{ secrets.VITE_ENTRA_ID_CLIENT_ID }}
+          VITE_ENTRA_ID_TENANT_ID: ${{ secrets.VITE_ENTRA_ID_TENANT_ID }}
         run: npm run build
 
       - name: List output directory
