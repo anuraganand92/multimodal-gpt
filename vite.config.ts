@@ -2,15 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import history from 'connect-history-api-fallback';
 
-const backendUrl = process.env.VITE_AZURE_BACKEND_URL;
-const storageAccountName = process.env.VITE_AZURE_STORAGE_ACCOUNT_NAME;
-const containerName = process.env.VITE_AZURE_CONTAINER_NAME;
-const sasToken = process.env.VITE_AZURE_SAS_TOKEN;
-
-if (!backendUrl || !storageAccountName || !containerName || !sasToken) {
-  throw new Error("Missing required environment variables");
-}
-
 export default defineConfig({
   plugins: [
     react(),
@@ -34,10 +25,18 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: backendUrl,
+        target: process.env.VITE_AZURE_BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
     },
+  },
+  define: {
+    'process.env.VITE_AZURE_BACKEND_URL': JSON.stringify(process.env.VITE_AZURE_BACKEND_URL),
+    'process.env.VITE_AZURE_STORAGE_ACCOUNT_NAME': JSON.stringify(process.env.VITE_AZURE_STORAGE_ACCOUNT_NAME),
+    'process.env.VITE_AZURE_CONTAINER_NAME': JSON.stringify(process.env.VITE_AZURE_CONTAINER_NAME),
+    'process.env.VITE_AZURE_SAS_TOKEN': JSON.stringify(process.env.VITE_AZURE_SAS_TOKEN),
+    'process.env.VITE_ENTRA_ID_CLIENT_ID': JSON.stringify(process.env.VITE_ENTRA_ID_CLIENT_ID),
+    'process.env.VITE_ENTRA_ID_TENANT_ID': JSON.stringify(process.env.VITE_ENTRA_ID_TENANT_ID),
   },
 });
