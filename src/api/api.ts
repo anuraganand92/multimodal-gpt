@@ -4,18 +4,19 @@ import { ConversationRequest } from "./models";
 import config from '../../config';
 import msalInstance from '../msalConfig';
 
-console.log("Initializing Blob Service Client with SAS token");
+console.log("Initializing Blob Service Client");
 
-const sasToken = config.sasToken;
-const blobServiceClient = new BlobServiceClient(`https://${config.storageAccountName}.blob.core.windows.net?${sasToken}`);
+const blobServiceClient = new BlobServiceClient(`https://${config.storageAccountName}.blob.core.windows.net?${config.sasToken}`);
 
 async function uploadFileToBlob(file: File): Promise<string> {
     console.log("Uploading file to blob");
-    const containerClient = blobServiceClient.getContainerClient(config.containerName);
+    const containerClient = blobServiceClient.getContainerClient("doc-upload");
     const blockBlobClient = containerClient.getBlockBlobClient(file.name);
-    await blockBlobClient.uploadBrowserData(file);
+    await blockBlobClient.uploadBrowserData(file, {
+        blobHTTPHeaders: { blobContentType: file.type }
+    });
     console.log("File uploaded to blob:", blockBlobClient.url);
-    return blockBlobClient.url;
+    return decodeURIComponent(blockBlobClient.url.split("?")[0]); // Remove SAS token from URL and decode spaces
 }
 
 export async function callConversationApi(options: ConversationRequest, abortSignal: AbortSignal): Promise<any> {
@@ -24,12 +25,16 @@ export async function callConversationApi(options: ConversationRequest, abortSig
     const userId = accounts.length > 0 ? accounts[0].homeAccountId : "some-user-id";
     const fileUrl = Cookies.get('uploadedFileUrl') || "";
 
-    const queryString = new URLSearchParams({
+    const queryParams: Record<string, string> = {
         query: options.messages[options.messages.length - 1].content,
-        conversation_id: options.id || '',  // Default to empty string if undefined
         user_id: userId,
-        file_url: fileUrl
-    }).toString();
+    };
+
+    if (fileUrl) {
+        queryParams.file_url = decodeURIComponent(fileUrl.split("?")[0]); // Remove SAS token from URL and decode spaces
+    }
+
+    const queryString = new URLSearchParams(queryParams).toString();
 
     const response = await fetch(`${config.backendUrl}/ask?${queryString}`, {
         method: "GET",
@@ -44,6 +49,7 @@ export async function callConversationApi(options: ConversationRequest, abortSig
     }
 
     console.log("Received response from conversation API");
+    Cookies.remove('uploadedFileUrl'); // Reset the cookie after the API request
     return response.json();
 }
 
