@@ -11,6 +11,7 @@ import {
   ChatMessage,
   ConversationRequest,
   callConversationApi,
+  clearChat as clearChatApi,
   Citation,
   ChatResponse,
   ToolMessageContent,
@@ -20,6 +21,7 @@ import { QuestionInput } from "../../components/QuestionInput";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import msalInstance from "../../msalConfig";
 
 const Chat = () => {
   const lastQuestionRef = useRef<string>("");
@@ -79,11 +81,19 @@ const Chat = () => {
     }
   };
 
-  const clearChat = () => {
-    lastQuestionRef.current = "";
-    setActiveCitation(null);
-    setAnswers([]);
-    setConversationId(uuidv4());
+  const handleClearChat = async () => {
+    const accounts = msalInstance.getAllAccounts();
+    const userId = accounts.length > 0 ? accounts[0].homeAccountId : "some-user-id";
+    try {
+      await clearChatApi(userId);
+      lastQuestionRef.current = "";
+      setActiveCitation(null);
+      setAnswers([]);
+      setConversationId(uuidv4());
+    } catch (error) {
+      console.error("Error clearing chat:", error);
+      alert("Failed to clear chat. Please try again.");
+    }
   };
 
   const stopGenerating = () => {
@@ -194,8 +204,8 @@ const Chat = () => {
                 background: isLoading || answers.length === 0 ? "#BDBDBD" : "radial-gradient(109.81% 107.82% at 100.1% 90.19%, #bd0f7d 33.63%, #c32d96 70.31%, #dd8db9 100%)",
                 cursor: isLoading || answers.length === 0 ? "" : "pointer",
               }}
-              onClick={clearChat}
-              onKeyDown={(e) => (e.key === "Enter" || e.key === " " ? clearChat() : null)}
+              onClick={handleClearChat}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " " ? handleClearChat() : null)}
               aria-label="Clear session"
               role="button"
               tabIndex={0}
