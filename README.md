@@ -1,4 +1,4 @@
-# Hanashi AI
+# Multimodal GPT
 
 ```bash
 npm install
